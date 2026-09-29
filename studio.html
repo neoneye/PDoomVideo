@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Job Replacement studio</title>
+<style>
+  html, body { margin: 0; background: #05060a; color: #ddd; font: 13px system-ui, sans-serif; }
+  main { padding: 12px; display: grid; gap: 8px; }
+  #out { width: min(100%, 1280px); aspect-ratio: 16 / 9; height: auto; background: #0b0c14; }
+  .bar { display: flex; gap: 10px; align-items: center; max-width: 1280px; }
+  #scrub { flex: 1; }
+  #tt { font-variant-numeric: tabular-nums; min-width: 150px; }
+  button { background: #222; color: #ddd; border: 1px solid #444; padding: 4px 10px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="out" width="1920" height="1080"></canvas>
+  <div class="bar"><button id="play">play</button><input id="scrub" type="range" min="0" max="169.2" step="0.0333" value="0"><span id="tt">loading…</span></div>
+  <audio id="au" src="assets/music.mp3" preload="auto"></audio>
+</main>
+<script src="src/core.js"></script>
+<script src="src/lattice.js"></script>
+<script src="src/font.js"></script>
+<script src="src/figures.js"></script>
+<script src="src/world.js"></script>
+<script>const STATIONS = [];</script>
+<script src="src/st/s01_translator.js"></script>
+<script src="src/st/s02_artist.js"></script>
+<script src="src/st/s03_callcenter.js"></script>
+<script src="src/st/s04_musician.js"></script>
+<script src="src/st/s05_developer.js"></script>
+<script src="src/st/s06_journalist.js"></script>
+<script src="src/st/s07_mathematician.js"></script>
+<script src="src/st/s08_biologist.js"></script>
+<script src="src/st/s09_ceo.js"></script>
+<script src="src/st/s10_researcher.js"></script>
+<script src="src/director.js"></script>
+<script src="src/tests.js"></script>
+<script>
+const cv = document.getElementById('out'), ctx = cv.getContext('2d');
+const params = new URLSearchParams(location.search);
+const scene = params.get('test') ? TESTS[params.get('test')] : drawFrame;
+window.drawAt = t => { const t0 = performance.now(); scene(ctx, t); return performance.now() - t0; };
+window.renderAt = (t, type = 'image/jpeg', q = .92) => { drawAt(t); return cv.toDataURL(type, q); };
+window.renderSheet = (ts, cols = 3, w = 640) => {
+  const h = Math.round(w * 9 / 16), rows = Math.ceil(ts.length / cols), sh = document.createElement('canvas');
+  sh.width = cols * w; sh.height = rows * h; const sc = sh.getContext('2d'), ms = [];
+  ts.forEach((t, n) => {
+    ms.push(Math.round(drawAt(t)));
+    sc.drawImage(cv, (n % cols) * w, Math.floor(n / cols) * h, w, h);
+    sc.fillStyle = '#000a'; sc.fillRect((n % cols) * w, Math.floor(n / cols) * h, 74, 22);
+    sc.fillStyle = '#fff'; sc.font = '15px monospace'; sc.fillText(t.toFixed(2), (n % cols) * w + 6, Math.floor(n / cols) * h + 16);
+  });
+  return { url: sh.toDataURL('image/jpeg', .9), ms };
+};
+window.ready = true;
+
+if (!params.has('render')) {
+  const au = document.getElementById('au'), sc = document.getElementById('scrub'), tt = document.getElementById('tt');
+  let t = +(params.get('t') || 0);
+  const show = () => { const ms = drawAt(t); sc.value = t; tt.textContent = `${t.toFixed(2)} s  ${ms.toFixed(0)} ms`; };
+  sc.oninput = () => { t = +sc.value; au.currentTime = t; show(); };
+  document.getElementById('play').onclick = () => au.paused ? au.play() : au.pause();
+  const loop = () => { if (!au.paused) { t = au.currentTime; show(); } requestAnimationFrame(loop); };
+  au.currentTime = t; show(); loop();
+}
+</script>
+</body>
+</html>

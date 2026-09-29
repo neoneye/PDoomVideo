@@ -58,8 +58,9 @@ function stationState(k, t) {
 const STATION_DEFAULTS = { ai: [21, -2], aiR: 5, numeral: [-20, -2], quote: [], quoteY: -15.5, quoteAt: 4.6 };
 
 // ---- the frame ----------------------------------------------------------------------------------
-function drawFrame(ctx, t) {
-  const cam = camAt(t), L = new Layer(), [vx0, vy0, vx1, vy1] = viewBB(cam, R_HEX + 2);
+// o.cam overrides the camera; o.extra(L, cam) paints on top before rendering (used for thumbnails).
+function drawFrame(ctx, t, o = {}) {
+  const cam = o.cam || camAt(t), L = new Layer(), [vx0, vy0, vx1, vy1] = viewBB(cam, R_HEX + 2);
   const visible = tl => tl.x > vx0 && tl.x < vx1 && tl.y > vy0 && tl.y < vy1;
   const vk = verseAt(t).k;
 
@@ -119,6 +120,7 @@ function drawFrame(ctx, t) {
   // 6. intro and outro lettering
   introOutro(L, t);
 
+  if (o.extra) o.extra(L, cam);
   renderLayer(ctx, L, cam, { dots: 1, dotMask: (x, y, i, j) => dotMask(t, x, y, i, j) });
 }
 
@@ -127,15 +129,14 @@ function quote(p, d, s) {
   const t0 = d.quoteAt, k = seg(s.lt, t0, t0 + 1.4), out = seg(s.lt, LINE.so + 1.6, LINE.so + 2.6);
   if (k <= 0 || out >= 1) return;
   const total = lines.join('').length; let shown = Math.ceil(k * total);
-  lines.forEach((ln, n) => {
-    const y = d.quoteY + n * 6.4, show = Math.max(0, Math.min(ln.length, shown)); shown -= ln.length;
-    if (!show) return;
-    // size 1 is the crisp size; long lines may spill past the canvas edge (the AI doesn't respect borders)
-    const sz = 1, x = -1.4;
-    const ko = textShape(ln, x, y, sz, { align: 'center', show, w: 2.4 });
-    if (ko) p.fill(ko, null, { erase: true });
-    text(p, ln, x, y, sz, COL.orange, { align: 'center', show, w: .8, dis: out, seed: 90 + n });
-  });
+  // size 1 is the crisp size; long lines may spill past the canvas edge (the AI doesn't respect borders)
+  const rows = lines.map((ln, n) => {
+    const show = Math.max(0, Math.min(ln.length, shown)); shown -= ln.length;
+    return { ln, n, show, y: d.quoteY + n * 6.4 };
+  }).filter(r => r.show);
+  // all knockouts first, then all letters, so one line's knockout never bites into the line above
+  for (const { ln, show, y } of rows) p.fill(textShape(ln, -1.4, y, 1, { align: 'center', show, w: 2.4 }), null, { erase: true });
+  for (const { ln, n, show, y } of rows) text(p, ln, -1.4, y, 1, COL.orange, { align: 'center', show, w: .8, dis: out, seed: 90 + n });
 }
 
 function frameAlpha(t, tl) {

@@ -87,7 +87,9 @@ function textShape(str, x, y, size = 1, o = {}) {
   const w = o.w ?? Math.max(.62, .7 * size), wid = textWidth(str, size);
   let x0 = o.align === 'center' ? x - wid / 2 : o.align === 'right' ? x - wid : x;
   // Snap so horizontal strokes sit mid-row (solid bands, not diamond chains) and slanted ones on lattice lines.
-  if (o.snap !== false) { const j = Math.round(y / H); y = j * H - H / 2; x0 = Math.round(x0 - j / 2) + j / 2; }
+  // (odd sizes: strokes are an odd number of rows, centred mid-row; even sizes: centred on a lattice line.
+  //  A stroke width of size·H makes horizontals exactly `size` rows thick.)
+  if (o.snap !== false) { const j = Math.round(y / H); y = j * H - (Math.round(size) % 2 ? H / 2 : 0); x0 = Math.round(x0 - j / 2) + j / 2; }
   const shapes = [], n = Math.min(str.length, o.show ?? str.length);
   for (let c = 0; c < n; c++) {
     const g = GLYPHS[str[c]] ?? GLYPHS['?'];

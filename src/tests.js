@@ -30,3 +30,45 @@ const TESTS = {
     renderLayer(ctx, L, { x: 0, y: 4, z: 18, rot: 0 }, { dots: .6 });
   },
 };
+
+// ---- YouTube thumbnails (render with --test=thumbA --stills=0, then scale to 1280×720) ---------------
+// Title lettering with a dark knockout so it reads over anything. Stroke = `size` rows thick.
+// Several lines: all knockouts first, then all letters. lines = [[str, x, y, size, col], ...]
+function title(p, str, x, y, size, col) { titles(p, [[str, x, y, size, col]]); }
+function titles(p, lines) {
+  for (const [str, x, y, size] of lines) p.fill(textShape(str, x, y, size, { align: 'center', w: size * H + 2.5 }), null, { erase: true });
+  for (const [str, x, y, size, col] of lines) text(p, str, x, y, size, col, { align: 'center', w: size * H + .08 });
+}
+Object.assign(TESTS, {
+  // A: the song title over the AI's grinning face; two workers already reduced to ghost points, one left
+  thumbA(ctx) {
+    const L = new Layer(), p = new Pen(L);
+    // a dim honeycomb of canvases behind everything
+    for (let q = -3; q <= 3; q++) for (let r = -2; r <= 2; r++) {
+      const [x, y] = V(q * 60 - r * 30, r * 60 - q * 30 + 0);   // hex-grid centres, radius 30, on lattice vertices
+      if (Math.abs(x) < 130 && Math.abs(y) < 80) p.hexRing(x, y, R_HEX, .7, COL.dim);
+    }
+    p.hexRing(42, 18, 36, 1.3, COL.orange);
+    aiFace(p, 42, 18, 25, { mood: 'grin', look: -1 });
+    [[-76, 52], [-54, 52], [-28, 52]].forEach(([x, y], n) => worker(p, x, y, n < 2 ? { s: 2.2, pts: true, face: 'none' } : { s: 2.2, face: 'shock', armL: [2.4, .6], armR: [2.4, .6] }));
+    title(p, 'JOB REPLACEMENT', 0, -32, 2, COL.cream);
+    renderLayer(ctx, L, { x: 0, y: 2, z: 10, rot: 0 }, { dots: .8 });
+  },
+  // B: the finished world, all orange, the last ghosts still standing, and the line that ends it
+  thumbB(ctx) {
+    drawFrame(ctx, 159.2, { cam: { x: -95, y: 0, z: 3, rot: 0 }, extra: L => {
+      const p = new Pen(L), x = -275;
+      titles(p, [['AND NOW', x, -78, 4, COL.cream], ['THERE WERE', x, -44, 4, COL.cream], ['NONE', x, 30, 8, COL.orange]]);
+    } });
+  },
+  // C: the developer's screens all turn into staring AI faces under the AI's boast
+  thumbC(ctx) {
+    const tl = STATION_TILES[4];
+    drawFrame(ctx, 77.35, { cam: toCam(camOn(tl, 0, -1, 18.5)), extra: L => {
+      const p = tilePen(L, tl);
+      // clear the half-dissolved quote (inside the canvas only) and letter it crisply
+      p.fill(Shape.fn([-24, -24, 24, -8.4], (x, y) => y < -8.4 && Shape.hex(0, 0, R_HEX - 1.6).has(x, y)), null, { erase: true });
+      titles(p, [['JUST', -1.4, -15.5, 1, COL.orange], ['PROMPT', -1.4, -9.1, 1, COL.orange]]);
+    } });
+  },
+});

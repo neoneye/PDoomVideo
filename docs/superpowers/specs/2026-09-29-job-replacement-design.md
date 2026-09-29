@@ -13,7 +13,7 @@ Visual language: Simon Strandgaard's TriangleDraw drawings. Every shape snaps to
 
 ## The world
 
-A honeycomb of 11 hexagonal "TriangleDraw canvases", flat-topped and of lattice radius R. Hexes of integer radius tile exactly on the lattice.
+A honeycomb of 19 hexagonal "TriangleDraw canvases" (10 stations + 9 AI canvases that bloom into mandalas), flat-topped and of lattice radius R. Hexes of integer radius tile exactly on the lattice.
 
 - **Centre:** the AI researcher's lab. The AI is born here as a small orange hex face on a monitor.
 - **Ring 1:** six stations (verses 1–6), visited in order around the ring. Each is rotated so its "up" points away from the centre, so neighbouring stations differ by 60° and the camera **rotates 60°** at each move.

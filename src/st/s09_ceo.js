@@ -1,9 +1,9 @@
 // Verse 9 · "There were two at the top… I run the firm, go rest instead!" · the CEO leaves in dread.
-// The top tile of the honeycomb. The CEO sits in a swivel chair on the apex of an org-chart pyramid,
-// stamping papers on the beat while reports flow up the lattice lines. When the band drops out
-// (lt ≈ 0.6 … 7.4) the AI climbs the chart in silence, one node per beat, each node flipping into a tiny
-// orange face. It reaches the top as the beat kicks back in, offers the CEO a beach umbrella, spins them
-// off the chair onto a sun lounger, and takes the chair (and the crown).
+// The top tile of the honeycomb. The crowned CEO stands at a lectern on the apex of an org-chart pyramid,
+// stamping on the beat while reports flow up the lattice lines. When the band drops out (lt ≈ 0.6 … 7.4)
+// the AI climbs the chart in silence, one node per beat, each node flipping into a tiny orange face. It
+// reaches the top as the beat kicks back in, offers the CEO a beach umbrella ("go rest instead"), packs
+// them off to a sun lounger in dread, and takes the top spot (and the crown). The CEO's ghost rests there.
 (() => {
   const V2 = (x, j) => [x, j * H];                        // lattice-row helper: x must suit the row's parity
   // the org chart: nodes on lattice vertices, 6 units apart along the 60° lines
@@ -21,8 +21,8 @@
   const APEX_T = beatLt(10);                              // ≈ 7.6
   const QUIET0 = .6, QUIET1 = 7.45;                       // the instrumental drop-out
   const S = 1.1, FEET = 9 * H;                            // the CEO stands behind the lectern (legs hidden)
-  const SIT = [-20.5, 7.8];                               // hip point on the sun lounger
-  const THRONE_AI = [0, 0];                               // where the AI face settles (also the flood origin)
+  const SIT = [-18, 7.8];                                 // hip point on the sun lounger
+  const TOP_AI = [0, 0];                               // where the AI face settles (also the flood origin)
   const YANK = 8.35, GONE = 8.8;                          // packed off to the beach
 
   // ---- props ----------------------------------------------------------------------------------------
@@ -46,7 +46,6 @@
   // The lectern at the top of the org chart: the apex node, and the CEO's desk.
   function lectern(p, col) {
     p.poly([[-4.5, 5 * H], [4.5, 5 * H], [2, 10 * H], [-2, 10 * H]], col);
-    p.hex(0, 7.5 * H, .9, COL.bg);
   }
   const TIE = [[-.45, -8.5], [.45, -8.5], [.3, -7.8], [.65, -6.3], [0, -5.4], [-.65, -6.3], [-.3, -7.8]];
   // The CEO: crown, dark tie, optionally a rubber stamp in the right hand.
@@ -57,7 +56,7 @@
   // Beach umbrella and sun lounger: the AI's idea of retirement. grow 0..1 pops it in.
   function beach(p, grow) {
     if (grow <= 0) return;
-    const o = { dis: 1 - clamp(grow * 1.4), seed: 31 }, c = COL.orange, cx = -14.5, top = -9 * H, bot = -3 * H;
+    const o = { dis: 1 - clamp(grow * 1.4), seed: 31 }, c = COL.orange, cx = -13, top = -9 * H, bot = -3 * H;
     p.poly([[cx - 3, top], [cx + 3, top], [cx + 6, bot], [cx - 6, bot]], c, o);                         // canopy
     for (const sx of [-1, 1]) p.line([[cx + sx, top], [cx + sx * 2.5, bot]], .62, null, { erase: true });
     for (let n = -5; n < 6; n += 2) p.poly([[cx + n, bot], [cx + n + 1, bot], [cx + n + .5, bot + H]], c, o);   // hem
@@ -95,7 +94,7 @@
     worker: 'ceo',
     quote: ['GO REST', 'INSTEAD'],
     quoteAt: 5.2,
-    ai: THRONE_AI, ownAI: true,
+    ai: TOP_AI, ownAI: true,
     numeral: [18, 3],
     draw(p, s) {
       const lt = s.lt, beat = s.beat, quiet = lt > QUIET0 && lt < QUIET1;
@@ -144,7 +143,7 @@
 
       // ---- the beach: offered on "go rest instead", and where the CEO ends up (for good)
       beach(p, seg(lt, 5.9, 6.5));
-      const lounge = { s: S, legL: [Math.PI / 2, 0], legR: [Math.PI / 2, 0], lean: -.45, armL: [.4, 1], armR: [.6, 1.5] };
+      const lounge = { s: S, legL: [Math.PI / 2, 0], legR: [Math.PI / 2, 0], lean: -.45, armL: [.1, .5], armR: [.6, 1.5] };
       if (lt > YANK + .5 && lt < LINE.now + .3) {
         const inK = seg(lt, YANK + .5, GONE + .1), outK = seg(lt, 10.6, LINE.now + .3);
         ceo(p, SIT[0], SIT[1] + 4.6 * S, { ...lounge, face: 'shock', shake: .45, t: s.t, dis: Math.max(1 - inK, outK), seed: 8 }, false, false, false);
@@ -155,14 +154,14 @@
       // ---- the AI: pops up at the side, watches the climb, then takes the chair (and the crown)
       if (s.ai > 0) {
         const slide = ease(seg(lt, 9.2, 9.9));
-        const ax = lerp(21, THRONE_AI[0], slide), ay = lerp(-2, THRONE_AI[1], slide) - Math.sin(slide * Math.PI) * 3;
+        const ax = lerp(21, TOP_AI[0], slide), ay = lerp(-2, TOP_AI[1], slide) - Math.sin(slide * Math.PI) * 3;
         const mood = lt < 4.6 ? 'smile' : lt < 6 ? 'grin' : lt < 9.2 ? 'smug' : lt < 12.5 ? 'grin' : (frac(beat / 16) < .06 ? 'closed' : 'smug');
         aiFace(p, ax, ay, 5, { pop: s.ai, mood, look: lt < 9.2 ? -1 : 0 });
       }
       // the crown hovers where the CEO's head was, then drops onto the AI
       if (lt >= YANK) {
         const c0 = [0, FEET - (10.7 + 2.05) * S], drop = ease(seg(lt, 9.9, 10.3)), bob = (1 - drop) * Math.sin(lt * 5) * .3;
-        crown(p, lerp(c0[0], THRONE_AI[0], drop), lerp(c0[1] + bob, THRONE_AI[1] - 5 * H + .2, drop), lerp(.85 * S, 1.3, drop), lt < 9.9 ? COL.cream : COL.orange);
+        crown(p, lerp(c0[0], TOP_AI[0], drop), lerp(c0[1] + bob, TOP_AI[1] - 5 * H + .2, drop), lerp(.85 * S, 1.3, drop), lt < 9.9 ? COL.cream : COL.orange);
       }
     },
   };

@@ -1,7 +1,8 @@
 // Verse 8 · "There were three in the lab… I study life, the genes I've read!" · the biologist bows their head.
-// The lab: a biologist at a microscope, a honeycomb of petri dishes, and a DNA double helix they read
-// one base pair at a time. The AI reads the whole genome at once: the helix turns orange rung by rung
-// from the AI outward, then races into its face while a ribbon of A C G T streams along the floor.
+// The lab: a biologist at a microscope, a little stack of petri dishes, and a DNA double helix they read
+// one base pair at a time (unread pairs are lattice points). The AI reads the whole genome at once: a scan
+// bar sweeps the helix orange from the AI's face outward, the helix then races into the face while a ribbon
+// of A C G T streams under the bench, and the dishes flip, one per beat, into flawless triangle cultures.
 (() => {
   const BENCH = 16 * H, FLOOR = BENCH + 4.4;          // bench top on a lattice row
   const HY = -3 * H, AMP = 4.6, KW = TAU / 24, SP = 3;  // helix axis, amplitude, wave number, rung spacing
@@ -23,7 +24,7 @@
 
   // The double helix. rungCol(n, x) -> colour or null (unread); strandCol(x) -> colour.
   function helix(p, lt, pos, phase, rungCol, strandCol, flash) {
-    const x0 = -27, x1 = 27, ys = [];
+    const x0 = -27, x1 = 27;
     const yA = x => HY + AMP * Math.sin(KW * (x - pos) + phase), yB = x => HY - AMP * Math.sin(KW * (x - pos) + phase);
     const front = x => Math.cos(KW * (x - pos) + phase) > 0;     // strand A faces us where cos > 0
     // strands, back halves first (thin), then rungs, then front halves (bold)
@@ -149,7 +150,7 @@
         const pos = scrollAt(k), front = 22 - k * 58;                // sweep front races left
         const humanRead = Math.floor(((AI_AT + 60) / (BEAT * 2)) % N_LOOP) + 1 + Math.floor(-25 / SP);
         helix(p, lt, pos, AI_AT * .9 + k * 1.2 + pos * .15,
-          (n, x) => n * SP + 0 >= front || n < Math.floor(-27 / SP) ? COL.orange : (n < humanRead ? COL.cream : null),
+          (n, x) => n * SP >= front || n < Math.floor(-27 / SP) ? COL.orange : (n < humanRead ? COL.cream : null),
           x => x >= front - 1 ? COL.orange : COL.cream,
           (n, x) => (x > front && x < front + 5 ? .7 * (1 - (x - front) / 5) : 0) + (k > 1.3 ? pulse(s.t, 7) * .35 * (hash(n, 5) > .6) : 0));
         // the sweep's leading edge: a bright orange scan bar

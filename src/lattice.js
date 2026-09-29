@@ -167,7 +167,7 @@ function renderLayer(ctx, layer, cam, opt = {}) {
   const [bx0, by0, bx1, by1] = viewBB(cam), z = cam.z;
 
   // 1. background lattice points
-  const dots = (opt.dots ?? 0) * clamp((z - 2.5) / 6);
+  const dots = (opt.dots ?? 0) * clamp(.45 + (z - 3) / 10);
   if (dots > 0.01) {
     const rad = clamp(z * .06, .7, 2.6) / z, buckets = Array.from({ length: 17 }, () => []);
     for (let j = Math.floor(by0 / H); j <= Math.ceil(by1 / H); j++)

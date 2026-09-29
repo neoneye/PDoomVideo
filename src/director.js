@@ -23,7 +23,7 @@ const CAM_KEYS = (() => {
     }
   }
   // outro: pull back over the finished world, then a slow turn
-  K.push([OUTRO_T + .2, camOn(centre, 0, -3, 14)], [OUTRO_T + 4.6, [0, 4, 3.25, 0]], [DUR, [0, 4, 3.05, -Math.PI / 12]]);
+  K.push([OUTRO_T + .2, camOn(centre, 0, -3, 15)], [OUTRO_T + 1.9, camOn(centre, 0, -3, 16.5)], [OUTRO_T + 5.6, [0, 4, 3.25, 0]], [DUR, [0, 4, 3.05, -Math.PI / 12]]);
   // unwrap rotations so interpolation takes the short way round
   for (let n = 1; n < K.length; n++) { const a = K[n - 1][1][3]; K[n][1] = [...K[n][1]]; K[n][1][3] = a + angDiff(a, K[n][1][3]); }
   return K;
@@ -181,11 +181,18 @@ function introOutro(L, t) {
   // "10" over the honeycomb as we first see all ten workers
   const k = seg(t, 5.6, 6.6), out = seg(t, 8.0, 8.9);
   if (k > 0 && out < 1) text(p, '10', -2, -139, 4.6, COL.cream, { align: 'center', dis: Math.max(1 - k, out), seed: 3, w: 2.4 });
-  // "I work alone… I work alone…" whispered in orange as the lights go out
-  const w1 = seg(t, 158.2, 160.2), w2 = seg(t, 162.2, 164.2), fade = seg(t, 167.6, 169);
-  const str = 'I WORK ALONE';
-  if (w1 > 0) text(p, str, 0, -137, 2.7, COL.orange, { align: 'center', show: Math.ceil(w1 * str.length), a: 1 - fade, w: 1.6 });
-  if (w2 > 0) text(p, str, 0, 152, 2.7, COL.orange, { align: 'center', show: Math.ceil(w2 * str.length), a: 1 - fade, w: 1.6 });
+  // "I work alone" is whispered four times (155.6, 157.5, 161.0, 165.1): first in the centre canvas's quote band,
+  // then above and below the whole world as the camera pulls back
+  const fade = seg(t, 167.6, 169), str = 'I WORK ALONE', typing = (a, b) => Math.ceil(seg(t, a, b) * str.length);
+  const c0 = typing(OUTRO_T, OUTRO_T + 1.1), cOut = seg(t, 159.2, 160.4);
+  if (c0 > 0 && cOut < 1) {
+    const cp = new Pen(L, STATION_TILES[9].x, STATION_TILES[9].y);
+    cp.fill(textShape(str, -2, -15.5, .78, { align: 'center', show: c0, w: 2.2 }), null, { erase: true });
+    text(cp, str, -2, -15.5, .78, COL.orange, { align: 'center', show: c0, w: .75, dis: cOut, seed: 4 });
+  }
+  const w1 = typing(161.0, 162.2), w2 = typing(165.1, 166.2);
+  if (w1 > 0) text(p, str, 0, -137, 2.7, COL.orange, { align: 'center', show: w1, a: 1 - fade, w: 1.6 });
+  if (w2 > 0) text(p, str, 0, 152, 2.7, COL.orange, { align: 'center', show: w2, a: 1 - fade, w: 1.6 });
   // world fade at the very end
   if (fade > 0) for (const [key, code] of L.cells) L.cells.set(key, Math.floor(code / 1024) * 1024 + Math.round((code % 1024) * (1 - fade)));
 }

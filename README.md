@@ -2,6 +2,8 @@
 
 Source code for the music video for *Job Replacement*, a "ten little…" countdown in which AI replaces one worker per verse until there are none.
 
+<img width="640" alt="The translator fades into a ghost of lattice points, the canvas floods orange, the countdown shows 9, and the camera rotates to the artist's canvas" src="docs/preview.gif" />
+
 Every frame is drawn on an **isometric triangle lattice**, in the visual language of Simon Strandgaard's [TriangleDraw](https://github.com/triangledraw) drawings: bold, two-tone, and snapped to the grid. The world is a honeycomb of hexagonal TriangleDraw canvases, one workplace per canvas. Humans are cream and the AI is orange. Each time a worker is replaced, their canvas floods orange and they leave behind a ghost made only of lattice points. The camera rotates the lattice 60° from canvas to canvas, and in the end the lights go out on everything except the AI.
 
 ## What's here

@@ -23,6 +23,7 @@ Every frame is drawn on an **isometric triangle lattice**, in the visual languag
 | [`render.mjs`](render.mjs) | Renders frames in headless Chrome and encodes the MP4 with ffmpeg |
 | [`STATION_GUIDE.md`](STATION_GUIDE.md) | The brief the stations were built from |
 | [`docs/superpowers/specs/`](docs/superpowers/specs/) | The design spec |
+| [`prompts/`](prompts/) | Every prompt given to Claude while making the video, verbatim |
 
 ## Rendering
 

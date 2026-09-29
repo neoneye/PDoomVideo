@@ -11,7 +11,7 @@ const Z_STATION = 19.5, Z_OVER = 3.9;
 const CAM_KEYS = (() => {
   const K = [], centre = STATION_TILES[9];
   // intro: born on the researcher's monitor, then pull back over the whole honeycomb
-  K.push([0, camOn(centre, 9, 6, 50)], [2.6, camOn(centre, 9, 6, 38)], [6.4, [0, -12, Z_OVER, 0]], [7.5, [0, -12, Z_OVER * 1.04, 0]]);
+  K.push([0, camOn(centre, 9, 6, 50)], [2.6, camOn(centre, 9, 6, 38)], [6.4, [0, -22, 3.3, 0]], [7.6, [0, -22, 3.42, 0]]);
   for (let k = 0; k < 10; k++) {
     const T = VERSE_T[k], tl = STATION_TILES[k];
     K.push([T + .55, camOn(tl, 0, -.5, Z_STATION)], [T + LINE.now, camOn(tl, 0, .8, Z_STATION * 1.16)], [T + 12.9, camOn(tl, 0, -3, 15)]);
@@ -180,7 +180,7 @@ function introOutro(L, t) {
   const p = new Pen(L);
   // "10" over the honeycomb as we first see all ten workers
   const k = seg(t, 5.6, 6.6), out = seg(t, 8.0, 8.9);
-  if (k > 0 && out < 1) text(p, '10', 0, -140, 6, COL.cream, { align: 'center', dis: Math.max(1 - k, out), seed: 3, w: 3 });
+  if (k > 0 && out < 1) text(p, '10', -2, -139, 4.6, COL.cream, { align: 'center', dis: Math.max(1 - k, out), seed: 3, w: 2.4 });
   // "I work alone… I work alone…" whispered in orange as the lights go out
   const w1 = seg(t, 158.2, 160.2), w2 = seg(t, 162.2, 164.2), fade = seg(t, 167.6, 169);
   const str = 'I WORK ALONE';

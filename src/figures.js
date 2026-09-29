@@ -63,9 +63,10 @@ function workerLife(p, s, x, y, o = {}) {
   const e0 = LINE.so + .2, e1 = LINE.now + .3;     // exit window
   const ghostPose = { ...base, ...workPose, ...(o.ghostPose || {}) };
   if (lt < e0) { worker(p, x, y, { ...base, ...workPose }); return; }
-  // ghost appears as the body leaves
+  // a ghost of lattice points appears as the body leaves; it stays until the outro, then switches off
   const gk = seg(lt, e0 + .6, e1 + .6);
-  if (gk > 0) worker(p, x, y, { ...ghostPose, pts: true, a: .9 * gk * (1 - seg(lt, 40, 45)), face: 'none' });
+  const off = 159.8 + ((s.k * 7) % 10) * .62;
+  if (gk > 0) worker(p, x, y, { ...ghostPose, pts: true, a: .9 * gk * (1 - seg(s.t, off, off + .25)), face: 'none' });
   const k = seg(lt, e0, e1), exit = o.exit ?? 'bow', dir = o.fleeDir ?? 1;
   if (k >= 1) return;
   if (exit === 'bow') {

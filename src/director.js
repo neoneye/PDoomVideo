@@ -11,7 +11,7 @@ const Z_STATION = 19.5, Z_OVER = 3.9;
 const CAM_KEYS = (() => {
   const K = [], centre = STATION_TILES[9];
   // intro: born on the researcher's monitor, then pull back over the whole honeycomb
-  K.push([0, camOn(centre, 6, -6, 70)], [2.6, camOn(centre, 6, -6, 46)], [6.4, [0, -12, Z_OVER, 0]], [7.5, [0, -12, Z_OVER * 1.04, 0]]);
+  K.push([0, camOn(centre, 9, 6, 50)], [2.6, camOn(centre, 9, 6, 38)], [6.4, [0, -12, Z_OVER, 0]], [7.5, [0, -12, Z_OVER * 1.04, 0]]);
   for (let k = 0; k < 10; k++) {
     const T = VERSE_T[k], tl = STATION_TILES[k];
     K.push([T + .55, camOn(tl, 0, -.5, Z_STATION)], [T + LINE.now, camOn(tl, 0, .8, Z_STATION * 1.16)], [T + 12.9, camOn(tl, 0, -3, 15)]);
@@ -23,7 +23,7 @@ const CAM_KEYS = (() => {
     }
   }
   // outro: pull back over the finished world, then a slow turn
-  K.push([OUTRO_T + .2, camOn(centre, 0, -3, 14)], [OUTRO_T + 4.6, [0, -6, Z_OVER, 0]], [DUR, [0, -6, Z_OVER * .93, -Math.PI / 6]]);
+  K.push([OUTRO_T + .2, camOn(centre, 0, -3, 14)], [OUTRO_T + 4.6, [0, 4, 3.25, 0]], [DUR, [0, 4, 3.05, -Math.PI / 12]]);
   // unwrap rotations so interpolation takes the short way round
   for (let n = 1; n < K.length; n++) { const a = K[n - 1][1][3]; K[n][1] = [...K[n][1]]; K[n][1][3] = a + angDiff(a, K[n][1][3]); }
   return K;
@@ -184,8 +184,8 @@ function introOutro(L, t) {
   // "I work alone… I work alone…" whispered in orange as the lights go out
   const w1 = seg(t, 158.2, 160.2), w2 = seg(t, 162.2, 164.2), fade = seg(t, 167.6, 169);
   const str = 'I WORK ALONE';
-  if (w1 > 0) text(p, str, 0, -137, 3.2, COL.orange, { align: 'center', show: Math.ceil(w1 * str.length), a: 1 - fade, w: 1.8 });
-  if (w2 > 0) text(p, str, 0, 150, 3.2, COL.orange, { align: 'center', show: Math.ceil(w2 * str.length), a: 1 - fade, w: 1.8 });
+  if (w1 > 0) text(p, str, 0, -137, 2.7, COL.orange, { align: 'center', show: Math.ceil(w1 * str.length), a: 1 - fade, w: 1.6 });
+  if (w2 > 0) text(p, str, 0, 152, 2.7, COL.orange, { align: 'center', show: Math.ceil(w2 * str.length), a: 1 - fade, w: 1.6 });
   // world fade at the very end
   if (fade > 0) for (const [key, code] of L.cells) L.cells.set(key, Math.floor(code / 1024) * 1024 + Math.round((code % 1024) * (1 - fade)));
 }

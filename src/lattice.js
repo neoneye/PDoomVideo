@@ -25,6 +25,12 @@ class Layer {
       if (test(wx, wy)) this.cells.set(key, tn * 1024 + code % 1024);
     }
   }
+  // Paint another layer's cells and points over this one.
+  merge(o) {
+    const map = o.cols.map(c => this.ci(c));
+    for (const [key, code] of o.cells) this.cells.set(key, map[Math.floor(code / 1024)] * 1024 + code % 1024);
+    for (const [key, code] of o.pts) this.pts.set(key, map[Math.floor(code / 1024)] * 1024 + code % 1024);
+  }
   // Remove cells passing test (e.g. to cut a hole, or clip everything outside the world).
   clear(test) { for (const key of [...this.cells.keys()]) { const [wx, wy] = cellCenter(key); if (test(wx, wy)) this.cells.delete(key); } }
 }
@@ -95,7 +101,7 @@ const Shape = {
 // Frame: local (lx, ly) -> world (x + s*R(r)*(lx, ly)). Options for every fill:
 //   a      alpha 0..1                    dis   dissolve: cells with hash < dis are skipped (0 = all on)
 //   seed   hash seed for dissolve        pts   paint lattice points (ghosts) instead of triangles
-//   erase  remove cells instead          mask  (lx, ly) => alpha multiplier (reveals, wipes, ripples)
+//   erase  remove cells instead          mask  (lx, ly, wx, wy) => alpha multiplier (reveals, wipes, ripples)
 class Pen {
   constructor(layer, x = 0, y = 0, r = 0, s = 1) { this.L = layer; this.x = x; this.y = y; this.r = r; this.s = s; this.c = Math.cos(r); this.sn = Math.sin(r); }
   at(dx, dy, dr = 0, ds = 1) { const [x, y] = this.toWorld(dx, dy); return new Pen(this.L, x, y, this.r + dr, this.s * ds); }
@@ -114,7 +120,7 @@ class Pen {
           const [lx, ly] = this.toLocal(vx(i, j), vy(j));
           if (!shape.has(lx, ly)) continue;
           if (dis > 0 && hash(i, j, seed + 7) < dis) continue;
-          const m = o.mask ? o.mask(lx, ly) : 1; if (m <= 0) continue;
+          const m = o.mask ? o.mask(lx, ly, vx(i, j), vy(j)) : 1; if (m <= 0) continue;
           L.put(L.pts, vertKey(i, j), col, a * m);
         }
       return this;
@@ -126,7 +132,7 @@ class Pen {
           const [lx, ly] = this.toLocal(wx, wy);
           if (!shape.has(lx, ly)) continue;
           if (dis > 0 && hash(i * 2 + k, j, seed) < dis) continue;
-          const m = o.mask ? o.mask(lx, ly) : 1; if (m <= 0) continue;
+          const m = o.mask ? o.mask(lx, ly, wx, wy) : 1; if (m <= 0) continue;
           const key = cellKey(i, j, k);
           if (o.erase) L.cells.delete(key); else L.put(L.cells, key, col, a * m);
         }
@@ -195,10 +201,14 @@ function renderLayer(ctx, layer, cam, opt = {}) {
   const seam = 0.9 / z;
   for (const [code, keys] of groups) {
     const col = layer.cols[Math.floor(code / 1024)], a = (code % 1024) / 1023;
-    ctx.beginPath();
-    for (const key of keys) { const [p, q, r] = cellVerts(key); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.lineTo(r[0], r[1]); ctx.closePath(); }
-    ctx.globalAlpha = a; ctx.fillStyle = col; ctx.fill();
-    if (a > .98) { ctx.strokeStyle = col; ctx.lineWidth = seam; ctx.lineJoin = 'miter'; ctx.stroke(); }
+    ctx.globalAlpha = a; ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = seam; ctx.lineJoin = 'miter';
+    // Skia slows down badly on paths with tens of thousands of sub-paths, so draw in chunks
+    for (let c0 = 0; c0 < keys.length; c0 += 1500) {
+      ctx.beginPath();
+      for (let n = c0; n < Math.min(keys.length, c0 + 1500); n++) { const [p, q, r] = cellVerts(keys[n]); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.lineTo(r[0], r[1]); ctx.closePath(); }
+      ctx.fill();
+      if (a > .98) ctx.stroke();
+    }
   }
   ctx.globalAlpha = 1;
 

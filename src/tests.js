@@ -10,6 +10,15 @@ const TESTS = {
     [.4, .6, .8, 1, 1.2].forEach((w, n) => p.line([[30, -14 + n * 3], [44, -14 + n * 3]], w, COL.cream));
     renderLayer(ctx, L, { x: 0, y: 0, z: 19, rot: Math.sin(t) * .0 }, { dots: 1 });
   },
+  // text crispness at various sizes, baseline snapped to a lattice row and x to a vertex
+  crisp(ctx, t) {
+    const L = new Layer(), p = new Pen(L);
+    [[.95, -18.1], [1, -9.5], [5 / 6, -1.7], [2 / 3, 5.2], [.75, 12.1], [1.5, 24.2]].forEach(([s, y], n) => {
+      const j = Math.round(y / H), yy = j * H - H / 2, x = Math.round(-44 - j / 2) + j / 2;
+      text(p, 'NO NEED FOR FRED ' + s.toFixed(2), x, yy, s, n % 2 ? COL.orange : COL.cream, { w: .8 });
+    });
+    renderLayer(ctx, L, { x: 0, y: 0, z: 19, rot: 0 }, { dots: 1 });
+  },
   // cast sheet: worker poses and AI moods
   cast(ctx, t) {
     const L = new Layer(), p = new Pen(L);

@@ -38,9 +38,11 @@ function worker(p, x, y, o = {}) {
     const ex = sx + Math.sin(a1) * 2.5 * sd, ey = sy + Math.cos(a1) * 2.5;
     const hx = ex + Math.sin(a1 + a2) * 2.3 * sd, hy = ey + Math.cos(a1 + a2) * 2.3;
     u.line([[sx, sy], [ex, ey], [hx, hy]], 1.0, col, fo);
-    if (hand) hand(u.at(hx, hy, Math.atan2(hy - ey, hx - ex)));
+    if (hand && !o.pts) hand(u.at(hx, hy, Math.atan2(hy - ey, hx - ex)));
   }
-  const hd = u.at(0, -6.1, (o.head ?? 0) * fl);
+  // the head centre snaps to a lattice vertex so the hexagon (and its eyes) stay crisp
+  const [hwx, hwy] = u.toWorld(0, -6.1), hj = Math.round(hwy / H), hi = Math.round(hwx - hj / 2);
+  const hd = new Pen(p.L, hi + hj / 2, hj * H, u.r + (o.head ?? 0) * fl, u.s);
   hd.hex(0, 0, 1.75, col, fo);
   const face = o.face ?? 'dot';
   if (face !== 'none' && !o.pts) {
@@ -50,7 +52,7 @@ function worker(p, x, y, o = {}) {
     if (face === 'shock') hd.disc(0, .85, .38, ink, eo);
     if (face === 'sad') hd.line([[-.5, 1.05], [0, .75], [.5, 1.05]], .45, ink, eo);
   }
-  if (o.hat) o.hat(hd);
+  if (o.hat && !o.pts) o.hat(hd);
   return q;
 }
 
@@ -74,8 +76,10 @@ function workerLife(p, s, x, y, o = {}) {
     const b = ease(seg(lt, e0, e0 + 1.2));
     worker(p, x, y + b * .8, { ...base, ...workPose, lean: b * .22, head: b * .75, face: 'sad', armL: [lerp(workPose.armL?.[0] ?? .15, -.05, b), lerp(workPose.armL?.[1] ?? 0, 0, b)], armR: [lerp(workPose.armR?.[0] ?? .15, -.05, b), lerp(workPose.armR?.[1] ?? 0, 0, b)], dis: easeIn(seg(lt, e0 + 1.6, e1)), seed: 3 });
   } else if (exit === 'flee' || exit === 'turn') {
+    // runs off the canvas, clipped at the hex edge so they don't trample the neighbours
     const run = easeIn(seg(lt, e0 + (exit === 'turn' ? .9 : .4), e1));
-    worker(p, x + dir * run * 38, y, { ...base, walk: lt * 2.2, flip: dir, face: 'shock', lean: dir * .15 * (run > 0), dis: seg(lt, e1 - .6, e1) });
+    const clip = (lx, ly, wx, wy) => { const [sx, sy] = p.toLocal(wx, wy); return Shape.hex(0, 0, R_HEX - .9).has(sx, sy) ? 1 : 0; };
+    worker(p, x + dir * run * 38, y, { ...base, walk: lt * 2.2, flip: dir, face: 'shock', lean: dir * .15 * (run > 0), dis: seg(lt, e1 - .6, e1), mask: clip });
   } else if (exit === 'dread') {
     const d = seg(lt, e0, e1);
     worker(p, x, y, { ...base, ...workPose, shake: .5 + d * 1.2, face: 'shock', armL: [2.4, .6], armR: [2.4, .6], dis: easeIn(seg(lt, e0 + 1.5, e1)), seed: 5 });

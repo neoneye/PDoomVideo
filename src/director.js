@@ -14,7 +14,7 @@ const CAM_KEYS = (() => {
   K.push([0, camOn(centre, 9, 6, 50)], [2.6, camOn(centre, 9, 6, 38)], [6.4, [0, -22, 3.3, 0]], [7.6, [0, -22, 3.42, 0]]);
   for (let k = 0; k < 10; k++) {
     const T = VERSE_T[k], tl = STATION_TILES[k];
-    K.push([T + .55, camOn(tl, 0, -.5, Z_STATION)], [T + LINE.now, camOn(tl, 0, .8, Z_STATION * 1.16)], [T + 12.9, camOn(tl, 0, -3, 15)]);
+    K.push([T + .55, camOn(tl, 0, -.5, Z_STATION)], [T + LINE.now, camOn(tl, 0, -.5, Z_STATION * 1.08)], [T + 12.9, camOn(tl, 0, -3, 15)]);
     if (k < 9) {
       const nx = STATION_TILES[k + 1], d = Math.hypot(nx.x - tl.x, nx.y - tl.y), T1 = VERSE_T[k + 1];
       const zm = Math.min(11, 1000 / (d + 2 * R_HEX));
@@ -73,14 +73,15 @@ function drawFrame(ctx, t) {
   // 3. stations
   for (let k = 0; k < 10; k++) {
     const tl = STATION_TILES[k]; if (!visible(tl)) continue;
-    const st = STATIONS[k], s = stationState(k, t), p = tilePen(L, tl), d = { ...STATION_DEFAULTS, ...st };
+    // each station paints into its own layer, so the flood below only has to look at that station's cells
+    const st = STATIONS[k], s = stationState(k, t), SL = new Layer(), p = tilePen(SL, tl), d = { ...STATION_DEFAULTS, ...st };
     st.draw(p, s);
     // the AI cameo
-    if (s.ai > 0 && !d.ownAI) aiFace(p, d.ai[0], d.ai[1], d.aiR, { pop: s.ai, mood: d.aiMood ? d.aiMood(s.lt, s) : (s.lt < LINE.so ? 'smile' : 'grin'), look: d.aiLook ? d.aiLook(s.lt, s) : [-1, .4] });
+    if (s.ai > 0 && !d.ownAI) aiFace(p, d.ai[0], d.ai[1], d.aiR, { pop: s.ai, mood: d.aiMood ? d.aiMood(s.lt, s) : (s.lt < LINE.so ? 'smile' : 'grin'), look: d.aiLook ? d.aiLook(s.lt, s) : -1 });
     // the takeover: cream turns orange in a ripple from the AI
     if (s.taken > 0) {
       const [ax, ay] = p.toWorld(d.ai[0], d.ai[1]), r = ease(s.taken) * 62;
-      L.recolor((wx, wy) => (wx - ax) ** 2 + (wy - ay) ** 2 < r * r && inHexWorld(tl, wx, wy), COL.orange, COL.cream);
+      SL.recolor((wx, wy) => (wx - ax) ** 2 + (wy - ay) ** 2 < r * r && inHexWorld(tl, wx, wy), COL.orange, COL.cream);
     }
     // the AI's boast, typed in orange with a knockout so it reads over anything
     quote(p, d, s);
@@ -90,8 +91,9 @@ function drawFrame(ctx, t) {
       const [nx, ny] = d.numeral, pr = 8.4 * backOut(seg(s.lt, LINE.num - .9, LINE.num - .3)), dis = Math.max(1 - nk, nout);
       p.hex(nx, ny, pr, null, { erase: true, dis: nout, seed: 60 + k });
       p.hexRing(nx, ny, pr, .7, COL.cream, { dis: nout, seed: 61 + k });
-      text(p, String(s.n - 1), nx - 1.7, ny + 4.9, 1.9, COL.cream, { align: 'center', dis, seed: 40 + k, w: 1.5 });
+      text(p, String(s.n - 1), nx - 1.7, ny + 5.2, 2, COL.cream, { align: 'center', dis, seed: 40 + k, w: 1.5 });
     }
+    L.merge(SL);
   }
 
   // 4. tile frames (the TriangleDraw canvas edge), dim, on top so every canvas reads as a hexagon
@@ -128,8 +130,8 @@ function quote(p, d, s) {
   lines.forEach((ln, n) => {
     const y = d.quoteY + n * 6.4, show = Math.max(0, Math.min(ln.length, shown)); shown -= ln.length;
     if (!show) return;
-    // fit inside the hex at this height (half-width at y is (R·H − |y|/2)/H), leaving a margin
-    const hw = (R_HEX * H - Math.abs(y - 3) / 2) / H - 3, sz = Math.min(.95, 2 * hw / textWidth(ln, 1)), x = -1.4 * sz;
+    // size 1 is the crisp size; long lines may spill past the canvas edge (the AI doesn't respect borders)
+    const sz = 1, x = -1.4;
     const ko = textShape(ln, x, y, sz, { align: 'center', show, w: 2.4 });
     if (ko) p.fill(ko, null, { erase: true });
     text(p, ln, x, y, sz, COL.orange, { align: 'center', show, w: .8, dis: out, seed: 90 + n });
@@ -142,9 +144,15 @@ function frameAlpha(t, tl) {
 }
 
 // Lattice points: revealed outward from the centre in the intro, switched off one by one in the outro.
+const IN_WORLD = new Map();   // memo: is lattice point (i, j) inside any canvas? (the world never moves)
 function dotMask(t, x, y, i, j) {
-  let inside = false;
-  for (const tl of ALL_TILES) if (Math.abs(x - tl.x) < R_HEX && Math.abs(y - tl.y) < R_HEX && inHexWorld(tl, x, y, R_HEX - .5)) { inside = true; break; }
+  const key = vertKey(i, j);
+  let inside = IN_WORLD.get(key);
+  if (inside === undefined) {
+    inside = false;
+    for (const tl of ALL_TILES) if (Math.abs(x - tl.x) < R_HEX && Math.abs(y - tl.y) < R_HEX && inHexWorld(tl, x, y, R_HEX - .5)) { inside = true; break; }
+    IN_WORLD.set(key, inside);
+  }
   if (!inside) return 0;
   const d = Math.hypot(x, y), h = hash(i, j, 77);
   const on = seg(t, .4 + d * .028 + h * .5, .9 + d * .028 + h * .5);
@@ -180,19 +188,19 @@ function introOutro(L, t) {
   const p = new Pen(L);
   // "10" over the honeycomb as we first see all ten workers
   const k = seg(t, 5.6, 6.6), out = seg(t, 8.0, 8.9);
-  if (k > 0 && out < 1) text(p, '10', -2, -139, 4.6, COL.cream, { align: 'center', dis: Math.max(1 - k, out), seed: 3, w: 2.4 });
+  if (k > 0 && out < 1) text(p, '10', -2, -139, 5, COL.cream, { align: 'center', dis: Math.max(1 - k, out), seed: 3, w: 2.6 });
   // "I work alone" is whispered four times (155.6, 157.5, 161.0, 165.1): first in the centre canvas's quote band,
   // then above and below the whole world as the camera pulls back
   const fade = seg(t, 167.6, 169), str = 'I WORK ALONE', typing = (a, b) => Math.ceil(seg(t, a, b) * str.length);
   const c0 = typing(OUTRO_T, OUTRO_T + 1.1), cOut = seg(t, 159.2, 160.4);
   if (c0 > 0 && cOut < 1) {
     const cp = new Pen(L, STATION_TILES[9].x, STATION_TILES[9].y);
-    cp.fill(textShape(str, -2, -15.5, .78, { align: 'center', show: c0, w: 2.2 }), null, { erase: true });
-    text(cp, str, -2, -15.5, .78, COL.orange, { align: 'center', show: c0, w: .75, dis: cOut, seed: 4 });
+    cp.fill(textShape(str, -2, -15.5, 1, { align: 'center', show: c0, w: 2.4 }), null, { erase: true });
+    text(cp, str, -2, -15.5, 1, COL.orange, { align: 'center', show: c0, w: .75, dis: cOut, seed: 4 });
   }
   const w1 = typing(161.0, 162.2), w2 = typing(165.1, 166.2);
-  if (w1 > 0) text(p, str, 0, -137, 2.7, COL.orange, { align: 'center', show: w1, a: 1 - fade, w: 1.6 });
-  if (w2 > 0) text(p, str, 0, 152, 2.7, COL.orange, { align: 'center', show: w2, a: 1 - fade, w: 1.6 });
+  if (w1 > 0) text(p, str, 0, -137, 3, COL.orange, { align: 'center', show: w1, a: 1 - fade, w: 1.6 });
+  if (w2 > 0) text(p, str, 0, 152, 3, COL.orange, { align: 'center', show: w2, a: 1 - fade, w: 1.6 });
   // world fade at the very end
   if (fade > 0) for (const [key, code] of L.cells) L.cells.set(key, Math.floor(code / 1024) * 1024 + Math.round((code % 1024) * (1 - fade)));
 }

@@ -81,10 +81,13 @@ function textWidth(str, size = 1) { return ((String(str).length - 1) * FONT_ADV 
 
 // Build a shape for a string. (x, y) is the baseline start (left) unless o.align = 'center' | 'right'.
 // o.w: stroke width in local units (default scales with size). o.show: number of glyphs visible (typing).
+// Text is crispest at integer sizes (1, 2, 3…); the baseline is snapped to the lattice unless o.snap === false.
 function textShape(str, x, y, size = 1, o = {}) {
   str = String(str).toUpperCase();
   const w = o.w ?? Math.max(.62, .7 * size), wid = textWidth(str, size);
-  const x0 = o.align === 'center' ? x - wid / 2 : o.align === 'right' ? x - wid : x;
+  let x0 = o.align === 'center' ? x - wid / 2 : o.align === 'right' ? x - wid : x;
+  // Snap so horizontal strokes sit mid-row (solid bands, not diamond chains) and slanted ones on lattice lines.
+  if (o.snap !== false) { const j = Math.round(y / H); y = j * H - H / 2; x0 = Math.round(x0 - j / 2) + j / 2; }
   const shapes = [], n = Math.min(str.length, o.show ?? str.length);
   for (let c = 0; c < n; c++) {
     const g = GLYPHS[str[c]] ?? GLYPHS['?'];
